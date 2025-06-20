@@ -1,6 +1,7 @@
 use crate::sources::{HackerNews, Source};
 use axum::{Router, extract::State, routing::get, serve};
 use std::{sync::Arc, time::Duration};
+use tokio::net::TcpListener;
 
 struct AppState {
     hn_source: HackerNews,
@@ -17,11 +18,11 @@ pub async fn run_ws(config: crate::config::Config) {
         .into_make_service();
 
     let listener = if config.webserver_address.is_some() {
-        tokio::net::TcpListener::bind(config.webserver_address.unwrap())
+        TcpListener::bind(config.webserver_address.unwrap())
             .await
             .unwrap()
     } else {
-        tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.webserver_port.unwrap()))
+        TcpListener::bind(format!("0.0.0.0:{}", config.webserver_port.unwrap()))
             .await
             .unwrap()
     };
