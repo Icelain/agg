@@ -1,5 +1,5 @@
 use crate::sources::{HackerNews, Source};
-use axum::{Router, routing::get, serve};
+use axum::{Router, extract::State, routing::get, serve};
 use std::{sync::Arc, time::Duration};
 use tokio::net::TcpListener;
 
@@ -13,7 +13,7 @@ pub async fn run_ws(config: crate::config::Config) {
 
     let state = Arc::new(AppState { hn_source });
     let app = Router::new()
-        .route("/", get(|| async { ";)" }))
+        .route("/", get(index_feed_handler))
         .with_state(state)
         .into_make_service();
 
@@ -34,7 +34,18 @@ async fn source_refresh(mut source: impl Source) {
     let mut interval = tokio::time::interval(Duration::from_secs(60));
 
     loop {
-        source.sync().await.inspect_err(|e| println!("error: {e}"));
+        let _ = source.sync().await.inspect_err(|e| println!("error: {e}"));
         interval.tick().await;
     }
+}
+
+async fn index_feed_handler(State(state): State<Arc<AppState>>) -> String {
+    let data = state.hn_source.pull().await;
+
+    let mut response = String::new();
+    for item in data {
+        response.push_str(&item.title);
+    }
+
+    response
 }

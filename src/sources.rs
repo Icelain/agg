@@ -7,9 +7,9 @@ const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/topstories.json"
 const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
 #[derive(Serialize, Deserialize, Default, Clone)]
-struct Post {
-    title: String,
-    url: Option<String>,
+pub struct Post {
+    pub title: String,
+    pub url: Option<String>,
 }
 
 pub trait Source {
