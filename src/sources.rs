@@ -1,12 +1,10 @@
-use pico_args::Arguments;
-use reqwest::header::Iter;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use std::sync::{Arc, Mutex};
 
-const HN_TOP_URL: &'static str = "https://hacker-news.firebaseio.com/v0/topstories.json";
-const HN_POST_URL: &'static str = "https://hacker-news.firebaseio.com/v0/item/";
+const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/topstories.json";
+const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
 #[derive(Serialize, Deserialize, Default, Clone)]
 struct Post {
@@ -50,7 +48,7 @@ impl Source for HackerNews {
 
     async fn pull(&self) -> Vec<Post> {
         let post_c = self.posts.clone();
-        let guard = (post_c.lock().unwrap());
+        let guard = post_c.lock().unwrap();
 
         let current_state = guard.to_vec();
         drop(guard);

@@ -1,5 +1,5 @@
 use crate::sources::{HackerNews, Source};
-use axum::{Router, extract::State, routing::get, serve};
+use axum::{Router, routing::get, serve};
 use std::{sync::Arc, time::Duration};
 use tokio::net::TcpListener;
 
@@ -8,7 +8,7 @@ struct AppState {
 }
 
 pub async fn run_ws(config: crate::config::Config) {
-    let mut hn_source = HackerNews::new();
+    let hn_source = HackerNews::new();
     tokio::spawn(source_refresh(hn_source.clone()));
 
     let state = Arc::new(AppState { hn_source });
