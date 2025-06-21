@@ -74,7 +74,10 @@ impl HackerNews {
 
             let posts_c = self.posts.clone();
             tokio::spawn(async move {
-                let resp = reqwest::get(post_url).await.unwrap().text().await.unwrap();
+                let resp = match reqwest::get(post_url).await {
+                    Ok(raw_resp) => raw_resp.text().await.unwrap(),
+                    Err(_) => return,
+                };
                 let post: Post = serde_json::from_str(&resp).unwrap();
                 let mut guard = posts_c.lock().unwrap();
 
