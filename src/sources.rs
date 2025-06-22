@@ -6,6 +6,8 @@ use std::sync::{Arc, Mutex};
 const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/topstories.json";
 const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
+const CACHE_CAPACITY: usize = 100;
+
 #[derive(Serialize, Deserialize, Default, Clone)]
 pub struct Post {
     pub title: String,
@@ -15,6 +17,8 @@ pub struct Post {
 pub trait Source {
     async fn sync(&mut self) -> Result<(), anyhow::Error>;
     async fn pull(&self) -> Vec<Post>;
+    async fn push_unconditional(&mut self, posts: Vec<Post>) -> Result<(), anyhow::Error>;
+    async fn empty(&mut self) -> Result<(), anyhow::Error>;
 }
 
 #[derive(Clone)]
@@ -55,6 +59,25 @@ impl Source for HackerNews {
 
         current_state
     }
+
+    async fn push_unconditional(&mut self, posts: Vec<Post>) -> Result<(), anyhow::Error> {
+        let mut guard = self.posts.lock().unwrap();
+
+        *guard = posts;
+
+        drop(guard);
+        Ok(())
+    }
+
+    async fn empty(&mut self) -> Result<(), anyhow::Error> {
+        let mut guard = self.posts.lock().unwrap();
+
+        guard.clear();
+
+        drop(guard);
+
+        Ok(())
+    }
 }
 
 impl HackerNews {
@@ -79,13 +102,10 @@ impl HackerNews {
                 let post: Post = serde_json::from_str(&resp).unwrap();
                 let mut guard = posts_c.lock().unwrap();
 
-                if guard.len() >= 50 {
-                    guard.resize_with(49, Default::default);
+                if guard.len() >= CACHE_CAPACITY {
+                    guard.resize_with(CACHE_CAPACITY - 1, Default::default);
                 }
 
-                if post.url.clone().is_some() {
-                    println!("{}:{}", post.title, post.url.clone().unwrap());
-                }
                 guard.push(post);
 
                 drop(guard);

@@ -1,7 +1,10 @@
+use dotenv::dotenv;
 
 use crate::config;
 
-pub fn parse_arguments(mut args: pico_args::Arguments) -> Result<config::Config, anyhow::Error> {
+pub fn parse_arguments_and_env_vars(
+    mut args: pico_args::Arguments,
+) -> Result<config::Config, anyhow::Error> {
     let port_opt = args.value_from_str("--port");
     let address_opt = args.value_from_str("--addr");
 
@@ -11,8 +14,11 @@ pub fn parse_arguments(mut args: pico_args::Arguments) -> Result<config::Config,
         ));
     }
 
+    dotenv();
+
     Ok(config::Config {
         webserver_address: address_opt.ok(),
         webserver_port: port_opt.ok(),
+        openai_key: std::env::var("OPENAI_API_KEY")?,
     })
 }

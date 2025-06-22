@@ -1,5 +1,10 @@
-use crate::sources::{HackerNews, Source};
-use axum::{Router, extract::State, routing::get, serve};
+use crate::{
+    llm_filter,
+    sources::{HackerNews, Post, Source},
+    types::JsonResponse,
+};
+use axum::{Json, Router, extract::State, routing::get, serve};
+use serde::{Deserialize, Serialize};
 use std::{sync::Arc, time::Duration};
 use tokio::net::TcpListener;
 
@@ -9,7 +14,7 @@ struct AppState {
 
 pub async fn run_ws(config: crate::config::Config) {
     let hn_source = HackerNews::new();
-    tokio::spawn(source_refresh(hn_source.clone()));
+    tokio::spawn(source_refresh(hn_source.clone(), config.openai_key));
 
     let state = Arc::new(AppState { hn_source });
     let app = Router::new()
@@ -30,22 +35,41 @@ pub async fn run_ws(config: crate::config::Config) {
     serve(listener, app).await.unwrap();
 }
 
-async fn source_refresh(mut source: impl Source) {
-    let mut interval = tokio::time::interval(Duration::from_secs(60));
+async fn source_refresh(mut source: impl Source, token: String) {
+    let mut interval = tokio::time::interval(Duration::from_secs(60 * 3));
 
     loop {
         let _ = source.sync().await.inspect_err(|e| println!("error: {e}"));
+
+        let posts = source.pull().await;
+        let filtered_posts = match llm_filter::filter_posts(&token, posts).await {
+            Ok(posts) => posts,
+            Err(e) => {
+                eprintln!("Error filtering posts: {e}");
+                continue;
+            }
+        };
+
+        source
+            .push_unconditional(filtered_posts)
+            .await
+            .inspect_err(|e| eprintln!("Error pushing posts: {e}"));
+
         interval.tick().await;
     }
 }
 
-async fn index_feed_handler(State(state): State<Arc<AppState>>) -> String {
+async fn source_clear(mut source: impl Source) {
+    let mut interval = tokio::time::interval(Duration::from_secs(60 * 60));
+
+    loop {
+        source.empty();
+        interval.tick().await;
+    }
+}
+
+async fn index_feed_handler(State(state): State<Arc<AppState>>) -> Json<JsonResponse> {
     let data = state.hn_source.pull().await;
 
-    let mut response = String::new();
-    for item in data {
-        response.push_str(&item.title);
-    }
-
-    response
+    Json(JsonResponse { response: data })
 }

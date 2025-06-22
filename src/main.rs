@@ -1,6 +1,8 @@
 mod config;
+mod llm_filter;
 mod parser;
 pub(crate) mod sources;
+mod types;
 mod webserver;
 
 const HELP: &str = "
@@ -25,6 +27,6 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let app_config = parser::parse_arguments(arguments).unwrap();
+    let app_config = parser::parse_arguments_and_env_vars(arguments).unwrap();
     webserver::run_ws(app_config).await;
 }
