@@ -1,10 +1,9 @@
 use crate::{
     llm_filter,
-    sources::{HackerNews, Post, Source},
+    sources::{HackerNews, Source},
     types::JsonResponse,
 };
 use axum::{Json, Router, extract::State, routing::get, serve};
-use serde::{Deserialize, Serialize};
 use std::{sync::Arc, time::Duration};
 use tokio::net::TcpListener;
 
@@ -50,7 +49,7 @@ async fn source_refresh(mut source: impl Source, token: String) {
             }
         };
 
-        source
+        let _ = source
             .push_unconditional(filtered_posts)
             .await
             .inspect_err(|e| eprintln!("Error pushing posts: {e}"));

@@ -8,7 +8,7 @@ const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
 const CACHE_CAPACITY: usize = 100;
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Post {
     pub title: String,
     pub url: Option<String>,
