@@ -48,7 +48,5 @@ pub async fn filter_posts(
 
     let final_extracted_json: JsonResponse = serde_json::from_str(final_json_response).unwrap();
 
-    println!("{:?}", final_extracted_json.response);
-
     Ok(final_extracted_json.response)
 }
