@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/topstories.json";
 const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
+const RAW_CACHE_CAPACITY: usize = 1000;
 const CACHE_CAPACITY: usize = 100;
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
@@ -17,12 +18,14 @@ pub struct Post {
 pub trait Source {
     async fn sync(&mut self) -> Result<(), anyhow::Error>;
     async fn pull(&self) -> Vec<Post>;
+    async fn pull_raw(&self) -> Vec<Post>;
     async fn push_unconditional(&mut self, posts: Vec<Post>) -> Result<(), anyhow::Error>;
     async fn empty(&mut self) -> Result<(), anyhow::Error>;
 }
 
 #[derive(Clone)]
 pub struct HackerNews {
+    raw_posts: Arc<Mutex<Vec<Post>>>,
     posts: Arc<Mutex<Vec<Post>>>,
 }
 
@@ -60,17 +63,30 @@ impl Source for HackerNews {
         current_state
     }
 
+    async fn pull_raw(&self) -> Vec<Post> {
+        let raw_post_c = self.raw_posts.clone();
+        let guard = raw_post_c.lock().unwrap();
+
+        let current_state = guard.to_vec();
+        drop(guard);
+
+        current_state
+    }
+
     async fn push_unconditional(&mut self, posts: Vec<Post>) -> Result<(), anyhow::Error> {
         let mut guard = self.posts.lock().unwrap();
 
         *guard = posts;
 
+        if guard.len() >= CACHE_CAPACITY {
+            guard.resize_with(CACHE_CAPACITY - 1, Default::default);
+        }
         drop(guard);
         Ok(())
     }
 
     async fn empty(&mut self) -> Result<(), anyhow::Error> {
-        let mut guard = self.posts.lock().unwrap();
+        let mut guard = self.raw_posts.lock().unwrap();
 
         guard.clear();
 
@@ -83,6 +99,7 @@ impl Source for HackerNews {
 impl HackerNews {
     pub(crate) fn new() -> HackerNews {
         HackerNews {
+            raw_posts: Arc::new(Mutex::new(Vec::new())),
             posts: Arc::new(Mutex::new(Vec::with_capacity(50))),
         }
     }
@@ -93,17 +110,17 @@ impl HackerNews {
             post_url.push_str(&id.to_string());
             post_url.push_str(".json");
 
-            let posts_c = self.posts.clone();
+            let raw_posts_c = self.raw_posts.clone();
             tokio::spawn(async move {
                 let resp = match reqwest::get(post_url).await {
                     Ok(raw_resp) => raw_resp.text().await.unwrap(),
                     Err(_) => return,
                 };
                 let post: Post = serde_json::from_str(&resp).unwrap();
-                let mut guard = posts_c.lock().unwrap();
+                let mut guard = raw_posts_c.lock().unwrap();
 
-                if guard.len() >= CACHE_CAPACITY {
-                    guard.resize_with(CACHE_CAPACITY - 1, Default::default);
+                if guard.len() >= RAW_CACHE_CAPACITY {
+                    guard.resize_with(RAW_CACHE_CAPACITY - 1, Default::default);
                 }
 
                 guard.push(post);

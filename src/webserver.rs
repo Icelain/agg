@@ -40,7 +40,7 @@ async fn source_refresh(mut source: impl Source, token: String) {
     loop {
         let _ = source.sync().await.inspect_err(|e| println!("error: {e}"));
 
-        let posts = source.pull().await;
+        let posts = source.pull_raw().await;
         let filtered_posts = match llm_filter::filter_posts(&token, posts).await {
             Ok(posts) => posts,
             Err(e) => {

@@ -18,7 +18,7 @@ pub async fn filter_posts(
 
     let filter_prompt_json = json! ({
     "model": "gpt-4.1",
-    "input": format!("Take the given json detailing tech articles and only keep the entries that are related to AI and ML. ONLY OUTPUT PURE JSON, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS: {}", &json_content)
+    "input": format!("Take the given json detailing tech articles and only keep the entries that are related to AI and ML. ONLY OUTPUT PURE JSON, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS. THIS INFORMATION HAS TO BE PARSED BY A JSON PARSER: {}", &json_content)
     });
 
     let filtered_json_str = client
