@@ -62,7 +62,7 @@ async fn source_clear(mut source: impl Source) {
     let mut interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
     loop {
-        source.empty();
+        let _ = source.empty().await;
         interval.tick().await;
     }
 }
