@@ -36,10 +36,7 @@ pub async fn filter_posts(
     let mut extracted_json_response =
         serde_json::to_string(&filtered_json_response["output"][0]["content"][0]["text"])?;
 
-    extracted_json_response = extracted_json_response
-        .replace("\n", "")
-        .replace("\\n", "")
-        .replace("\\", "");
+    extracted_json_response = extracted_json_response.replace("\n", "").replace("\\n", "");
 
     let mut chars = extracted_json_response.chars();
     chars.next();
