@@ -14,6 +14,7 @@ struct AppState {
 pub async fn run_ws(config: crate::config::Config) {
     let hn_source = HackerNews::new();
     tokio::spawn(source_refresh(hn_source.clone(), config.openai_key));
+    tokio::spawn(source_clear(hn_source.clone()));
 
     let state = Arc::new(AppState { hn_source });
     let app = Router::new()
