@@ -35,7 +35,7 @@ pub async fn run_ws(config: crate::config::Config) {
 }
 
 async fn source_refresh(mut source: impl Source, token: String) {
-    let mut interval = tokio::time::interval(Duration::from_secs(60 * 3));
+    let mut interval = tokio::time::interval(Duration::from_secs(60 * 60));
 
     loop {
         let _ = source.sync().await.inspect_err(|e| println!("error: {e}"));
