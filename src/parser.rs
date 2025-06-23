@@ -14,7 +14,7 @@ pub fn parse_arguments_and_env_vars(
         ));
     }
 
-    dotenv();
+    let _ = dotenv();
 
     Ok(config::Config {
         webserver_address: address_opt.ok(),
