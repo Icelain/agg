@@ -117,6 +117,11 @@ impl HackerNews {
                     Err(_) => return,
                 };
                 let post: Post = serde_json::from_str(&resp).unwrap();
+
+                if post.url.is_none() {
+                    return;
+                }
+
                 let mut guard = raw_posts_c.lock().unwrap();
 
                 if guard.len() >= RAW_CACHE_CAPACITY {

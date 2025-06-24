@@ -1,3 +1,4 @@
+use axum::extract;
 use reqwest::Client;
 use serde_json::json;
 
@@ -14,11 +15,26 @@ pub async fn filter_posts(
     }
 
     let client = Client::new();
-    let json_content = serde_json::to_string_pretty(&JsonResponse { response: in_posts })?;
+    let mut in_posts_string = String::new();
+
+    in_posts.iter().for_each(|post| {
+        in_posts_string.push_str(&post.title);
+        in_posts_string.push_str("<::>");
+
+        // post urls are guaranteed to be Some(String) here
+        let url = post.url.as_ref().unwrap();
+        in_posts_string.push_str(&url);
+        in_posts_string.push('\n');
+    });
+
+    let mut ch = in_posts_string.chars();
+    ch.next_back();
+
+    in_posts_string = ch.as_str().to_string();
 
     let filter_prompt_json = json! ({
     "model": "gpt-4.1",
-    "input": format!("Take the given json detailing tech articles and only keep the entries that are related to AI and ML. ONLY OUTPUT PURE JSON, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS. THIS INFORMATION HAS TO BE PARSED BY A JSON PARSER: {}", &json_content)
+    "input": format!("Take the given entries detailing tech articles and only keep the entries that are related to AI and ML. ONLY OUTPUT AS THEY ARE PROVIDED, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS; USE \n to seperate entries: {}", in_posts_string)
     });
 
     let filtered_json_str = client
@@ -33,20 +49,32 @@ pub async fn filter_posts(
 
     let filtered_json_response: serde_json::Value = serde_json::from_str(&filtered_json_str)?;
 
-    let mut extracted_json_response =
+    let extracted_json_response =
         serde_json::to_string(&filtered_json_response["output"][0]["content"][0]["text"])?;
 
-    extracted_json_response = extracted_json_response
-        .replace("\n", "")
-        .replace("\\n", "")
-        .replace("\\", "")
+    // extracted_json_response = extracted_json_response
+    //     .replace("\n", "")
+    //     .replace("\\n", "")
+    //     .replace("\\", "")
 
-    let mut chars = extracted_json_response.chars();
-    chars.next();
-    chars.next_back();
-    let final_json_response = chars.as_str();
+    // let mut chars = extracted_json_response.chars();
+    // chars.next();
+    // chars.next_back();
+    // let final_json_response = chars.as_str();
 
-    let final_extracted_json: JsonResponse = serde_json::from_str(final_json_response).unwrap();
+    let mut out_posts: Vec<Post> = Vec::new();
 
-    Ok(final_extracted_json.response)
+    extracted_json_response.split("\\n").for_each(|line| {
+        let mut linesplit = line.split("<::>");
+
+        let title = linesplit.next().unwrap();
+        let url = linesplit.next().unwrap();
+
+        out_posts.push(Post {
+            title: title.to_string(),
+            url: Some(url.to_string()),
+        })
+    });
+
+    Ok(out_posts)
 }
