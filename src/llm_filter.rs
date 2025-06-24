@@ -1,8 +1,7 @@
-use axum::extract;
 use reqwest::Client;
 use serde_json::json;
 
-use crate::{sources::Post, types::JsonResponse};
+use crate::sources::Post;
 
 const OPENAI_API_URL: &str = "https://api.openai.com/v1/responses";
 
@@ -23,7 +22,7 @@ pub async fn filter_posts(
 
         // post urls are guaranteed to be Some(String) here
         let url = post.url.as_ref().unwrap();
-        in_posts_string.push_str(&url);
+        in_posts_string.push_str(url);
         in_posts_string.push('\n');
     });
 
