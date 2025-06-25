@@ -7,6 +7,8 @@ use axum::{Json, Router, extract::State, routing::get, serve};
 use std::{sync::Arc, time::Duration};
 use tokio::net::TcpListener;
 
+use tower_http::cors::CorsLayer;
+
 struct AppState {
     hn_source: HackerNews,
 }
@@ -19,6 +21,7 @@ pub async fn run_ws(config: crate::config::Config) {
     let state = Arc::new(AppState { hn_source });
     let app = Router::new()
         .route("/", get(index_feed_handler))
+        .layer(tower::ServiceBuilder::new().layer(CorsLayer::very_permissive()))
         .with_state(state)
         .into_make_service();
 
