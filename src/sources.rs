@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use std::sync::{Arc, Mutex};
 
-const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/topstories.json";
+const HN_TOP_URL: &str = "https://hacker-news.firebaseio.com/v0/beststories.json";
 const HN_POST_URL: &str = "https://hacker-news.firebaseio.com/v0/item/";
 
 const RAW_CACHE_CAPACITY: usize = 1000;
