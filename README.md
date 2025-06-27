@@ -1,1 +1,1 @@
-ML news aggregator. [https://mlnews.ice.computer](mlnews.ice.computer)
+ML news aggregator. [mlnews.ice.computer](https://mlnews.ice.computer)
