@@ -13,6 +13,8 @@ const CACHE_CAPACITY: usize = 100;
 pub struct Post {
     pub title: String,
     pub url: Option<String>,
+    pub score: usize,
+    pub time: u128,
 }
 
 pub trait Source {
@@ -116,6 +118,7 @@ impl HackerNews {
                     Ok(raw_resp) => raw_resp.text().await.unwrap(),
                     Err(_) => return,
                 };
+
                 let post: Post = serde_json::from_str(&resp).unwrap();
 
                 if post.url.is_none() {

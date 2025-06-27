@@ -23,6 +23,10 @@ pub async fn filter_posts(
         // post urls are guaranteed to be Some(String) here
         let url = post.url.as_ref().unwrap();
         in_posts_string.push_str(url);
+        in_posts_string.push_str("<::>");
+        in_posts_string.push_str(&post.score.to_string());
+        in_posts_string.push_str("<::>");
+        in_posts_string.push_str(&post.time.to_string());
         in_posts_string.push('\n');
     });
 
@@ -33,7 +37,7 @@ pub async fn filter_posts(
 
     let filter_prompt_json = json! ({
     "model": "gpt-4.1",
-    "input": format!("Take the given entries detailing tech articles and only keep the entries that are related to AI and ML. ONLY OUTPUT AS THEY ARE PROVIDED, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS; USE \n to seperate entries: {}", in_posts_string)
+    "input": format!("Take the given entries detailing tech articles and only keep the entries that are related to AI and ML. Entries are in the format: title<::>url<::>score<::>timestamp. ONLY OUTPUT AS THEY ARE PROVIDED, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS; USE \n to seperate entries. RETURN THEM IN AN ORDER OF HIGHEST TO LOWEST SCORES: {}", in_posts_string)
     });
 
     let filtered_json_str = client
@@ -51,27 +55,26 @@ pub async fn filter_posts(
     let extracted_json_response =
         serde_json::to_string(&filtered_json_response["output"][0]["content"][0]["text"])?;
 
-    // extracted_json_response = extracted_json_response
-    //     .replace("\n", "")
-    //     .replace("\\n", "")
-    //     .replace("\\", "")
-
-    // let mut chars = extracted_json_response.chars();
-    // chars.next();
-    // chars.next_back();
-    // let final_json_response = chars.as_str();
+    let mut chars = extracted_json_response.chars();
+    chars.next();
+    chars.next_back();
+    let final_json_response = chars.as_str();
 
     let mut out_posts: Vec<Post> = Vec::new();
 
-    extracted_json_response.split("\\n").for_each(|line| {
+    final_json_response.split("\\n").for_each(|line| {
         let mut linesplit = line.split("<::>");
 
         let title = linesplit.next().unwrap();
         let url = linesplit.next().unwrap();
+        let score = linesplit.next().unwrap().parse::<usize>().unwrap();
+        let timestamp = linesplit.next().unwrap().parse::<u128>().unwrap();
 
         out_posts.push(Post {
             title: title.to_string(),
             url: Some(url.to_string()),
+            score,
+            time: timestamp,
         })
     });
 
