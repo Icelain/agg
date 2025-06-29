@@ -67,7 +67,7 @@ async fn source_clear(mut source: impl Source) {
 
     loop {
         interval.tick().await;
-        let _ = source.empty().await;
+        source.empty().await.expect("could not empty raw source");
     }
 }
 
