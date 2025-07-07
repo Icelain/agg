@@ -107,13 +107,15 @@ impl HackerNews {
     }
 
     async fn hit(&mut self, story_ids: impl Iterator<Item = u64>) {
+        let mut handles = Vec::new();
+
         for id in story_ids {
             let mut post_url = HN_POST_URL.to_string();
             post_url.push_str(&id.to_string());
             post_url.push_str(".json");
 
             let raw_posts_c = self.raw_posts.clone();
-            tokio::spawn(async move {
+            let handle = tokio::spawn(async move {
                 let resp = match reqwest::get(post_url).await {
                     Ok(raw_resp) => raw_resp.text().await.unwrap(),
                     Err(_) => return,
@@ -135,6 +137,12 @@ impl HackerNews {
 
                 drop(guard);
             });
+
+            handles.push(handle);
+        }
+
+        for h in handles {
+            let _ = h.await;
         }
     }
 }
