@@ -37,7 +37,7 @@ pub async fn filter_posts(
 
     let filter_prompt_json = json! ({
     "model": "gpt-4.1",
-    "input": format!("Take the given entries detailing tech articles and only keep the entries that are related to AI and ML. Entries are in the format: title<::>url<::>score<::>timestamp. ONLY OUTPUT AS THEY ARE PROVIDED, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS; USE \n to seperate entries. RETURN THEM IN AN ORDER OF HIGHEST TO LOWEST SCORES: {}", in_posts_string)
+    "input": format!("Take the given entries detailing tech articles and only keep the entries that are related to AI and ML. Be strict with the filtering. Entries are in the format: title<::>url<::>score<::>timestamp. ONLY OUTPUT AS THEY ARE PROVIDED, NOTHING ELSE, NOT EVEN MARKDOWN BACKTICK INDICATORS; USE \n to seperate entries. RETURN THEM IN AN ORDER OF HIGHEST TO LOWEST SCORES: {}", in_posts_string)
     });
 
     let filtered_json_str = client
